@@ -27,7 +27,7 @@ while getopts ":w:r:s:" opt; do
             exit 1
             ;;
     esac
-done
+done 
 shift $((OPTIND -1))
 
 # Valeurs par défaut
@@ -79,7 +79,7 @@ while [ $count -gt 0 ]; do
         staged_files=$(git diff --name-only --cached)
         if [ -z "$staged_files" ]; then
             echo "$(tput setaf 1)Aucun fichier ajouté à l'index Git. Les fichiers modifiés seront supprimés.$(tput sgr0)"
-            git ls-files --modified | xargs -d '\n' rm -f
+            git ls-files --modified | while IFS= read -r file; do rm -f "$file"; done
         else
             echo "$(tput setaf 3)Des fichiers ont été ajoutés à l'index Git. Les fichiers modifiés ne seront pas supprimés.$(tput sgr0)"
         fi
