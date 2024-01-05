@@ -1,6 +1,6 @@
 ## Introduction
 
-[`manon.sh`](command:_github.copilot.openSymbolInFile?%5B%22manon.sh%22%2C%22manon.sh%22%5D "manon.sh") et [`manon.ps1`](command:_github.copilot.openSymbolInFile?%5B%22manon.ps1%22%2C%22manon.ps1%22%5D "manon.ps1") sont des scripts qui surveillent les modifications de fichiers dans un dépôt Git. Ils vérifient les modifications toutes les 5 minutes et envoient des notifications à l'utilisateur. Si plus de 500 lignes ont été modifiées ou ajoutées, ils affichent les noms des fichiers en rouge. Si entre 100 et 500 lignes ont été modifiées ou ajoutées, ils affichent les noms des fichiers en bleu. Sinon, ils affichent les noms des fichiers en vert. Si trois avertissements ont été émis, tous les fichiers modifiés sont supprimés définitivement.
+[`manon.sh`](command:_github.copilot.openSymbolInFile?%5B%22manon.sh%22%2C%22manon.sh%22%5D "manon.sh") et [`manon.ps1`](command:_github.copilot.openSymbolInFile?%5B%22manon.ps1%22%2C%22manon.ps1%22%5D "manon.ps1") sont des scripts qui surveillent les modifications de fichiers dans un dépôt Git. Ils vérifient les modifications toutes les 30 secondes et envoient des notifications à l'utilisateur. Si plus de 500 lignes ont été modifiées ou ajoutées, ils affichent les noms des fichiers en rouge. Si entre 50 et 200 lignes ont été modifiées ou ajoutées, ils affichent les noms des fichiers en bleu. Sinon, ils affichent les noms des fichiers en vert. Si un fichier n'est pas ajoué au dépôt Git après le compte à rebours, il est supprimé.
 
 ## Installation
 
@@ -36,6 +36,30 @@ Pour [`manon.ps1`](command:_github.copilot.openRelativePath?%5B%22manon.ps1%22%5
 ```
 
 Les scripts commenceront à surveiller les modifications de fichiers et à envoyer des notifications.
+
+## Arguments du script
+
+Les scripts acceptent les arguments suivants :
+
+- `-w` ou `-workspace` : Le chemin vers le répertoire de travail. Par défaut, c'est le répertoire courant.
+- `-r` ou `-refresh_duration` : La durée en secondes entre chaque vérification des modifications. Par défaut, c'est 30 secondes.
+- `-s` ou `-delete_files` : Un booléen indiquant si les fichiers modifiés doivent être supprimés après trois avertissements. Par défaut, c'est `false`.
+
+## Exemples d'utilisation avec arguments
+
+Pour [`manon.sh`](command:_github.copilot.openRelativePath?%5B%22manon.sh%22%5D "manon.sh") :
+
+```sh
+./manon.sh -w /path/to/workspace -r 600 -s true
+```
+
+Pour [`manon.ps1`](command:_github.copilot.openRelativePath?%5B%22manon.ps1%22%5D "manon.ps1") :
+
+```powershell
+./manon.ps1 -workspace C:\path\to\workspace -refresh_duration 60 -delete_files $true
+```
+
+Ces commandes exécuteront les scripts dans le répertoire spécifié, vérifieront les modifications toutes les 10 minutes et supprimeront les fichiers modifiés après trois avertissements.
 
 ## FAQ
 
