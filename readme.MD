@@ -27,7 +27,7 @@ Exécutez le script avec la commande suivante :
 
 Le script commencera à surveiller les modifications de fichiers et à envoyer des notifications.
 
-## FAQ
+## FAQ 
 
 **Q : Comment arrêter le script ?**
 
