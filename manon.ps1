@@ -1,6 +1,6 @@
 # Vérifier si Git est installé
-if (!(Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "Git n'est pas installé. Veuillez installer Git." -ForegroundColor Red
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Host -ForegroundColor Red "Git n'est pas installé. Veuillez installer Git."
     exit
 }
 
@@ -11,49 +11,63 @@ param (
     [bool]$delete_files = $true
 )
 
-# Fonction pour vérifier si des fichiers ont été modifiés
+# Si le workspace n'est pas défini, utilisez le répertoire de travail actuel (full path)
+if ($workspace -eq ".") {
+    $workspace = Get-Location
+}
+
+# Vérifier si le répertoire spécifié est un dépôt Git
+Set-Location -Path $workspace
+try {
+    git rev-parse --git-dir > $null
+} catch {
+    Write-Host -ForegroundColor Red "Le répertoire spécifié n'est pas un dépôt Git."
+    exit
+}
+
 function Check-ModifiedFiles {
-    Set-Location -Path $workspace
+    Write-Host -ForegroundColor Yellow "Fichiers modifiés trouvés :"
     $modified_files = git diff --name-only
-    if (!$modified_files) {
-        Write-Host "Aucun fichier modifié." -ForegroundColor Green
-    } else {
-        Write-Host "Fichiers modifiés trouvés :" -ForegroundColor Yellow
-        foreach ($file in $modified_files) {
-            $modified_lines = git diff --numstat $file | ForEach-Object { ($_ -split '\s+')[0] }
-            if ($modified_lines -gt 200) {
-                Write-Host "$file ($modified_lines lignes modifiées)" -ForegroundColor Red
-            } elseif ($modified_lines -gt 50) {
-                Write-Host "$file ($modified_lines lignes modifiées)" -ForegroundColor Blue
-            } else {
-                Write-Host "$file ($modified_lines lignes modifiées)" -ForegroundColor Green
-            }
+    $untracked_files = git ls-files --others --exclude-standard
+    $all_files = $modified_files + " " + $untracked_files
+    if (-not $all_files) {
+        Write-Host -ForegroundColor Green "Aucun fichier modifié."
+        return
+    }
+    foreach ($file in $all_files -split ' ') {
+        if (-not $file) { continue }
+        $modified_lines = git diff --numstat $file | ForEach-Object { ($_ -split '\s+')[0] }
+        
+        if (-not $modified_lines -match '^\d+$') {
+            $modified_lines = 0
+        }
+        if ($modified_lines -gt 200) {
+            Write-Host -ForegroundColor Red "$file ($modified_lines lignes modifiées)"
+        } elseif ($modified_lines -gt 50) {
+            Write-Host -ForegroundColor Blue "$file ($modified_lines lignes modifiées)"
+        } else {
+            Write-Host -ForegroundColor Green "$file ($modified_lines lignes modifiées)"
         }
     }
 }
 
 # Exécuter le script en boucle toutes les $refresh_duration secondes
 $count = $refresh_duration
-Write-Host "Espace de travail : $workspace"
-Write-Host "Durée de rafraîchissement : $refresh_duration secondes"
-Write-Host "Supprimer les fichiers modifiés : $delete_files"
-
-while ($count -gt 0) {
+do {
     if ($count -eq $refresh_duration) {
         Check-ModifiedFiles
     }
-    Write-Host "Compte à rebours : $count" -NoNewline
+    Write-Host -NoNewline -ForegroundColor Red "Compte à rebours : $count`r"
+    Start-Sleep -Seconds 1
     $count--
-    if ($count -eq 0 -and $delete_files) {
-        # Vérifier si des fichiers ont été ajoutés à l'index Git
-        $staged_files = git diff --name-only --cached
-        if (!$staged_files) {
-            Write-Host "Aucun fichier ajouté à l'index Git. Les fichiers modifiés seront supprimés." -ForegroundColor Red
-            git ls-files --modified | ForEach-Object { Remove-Item -Path $_ -Force }
+    if ($count -eq 0) {
+        $staged_changes = git diff --cached
+        if (-not $staged_changes -and $delete_files) {
+            Write-Host -ForegroundColor Red "Aucun fichier ajouté à l'index Git. Les fichiers modifiés seront supprimés."
+            git clean -fd
         } else {
-            Write-Host "Des fichiers ont été ajoutés à l'index Git. Les fichiers modifiés ne seront pas supprimés." -ForegroundColor Yellow
+            Write-Host -ForegroundColor Yellow "Des fichiers ont été ajoutés à l'index Git. Les fichiers modifiés ne seront pas supprimés."
         }
         $count = $refresh_duration
     }
-    Start-Sleep -Seconds 1
-}
+} while ($count -gt 0)
